@@ -165,3 +165,4 @@ int make90110(char *barcode,int *barint,int ketasuu){
 	}
 	return semiBP;
 }
+
