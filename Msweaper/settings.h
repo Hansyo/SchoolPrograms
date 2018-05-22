@@ -2,6 +2,12 @@
 #define settings_h
 
 #define BIAS 1
+#define NUM_SCANF_MAP 3
+#define NUM_SCANF_STATE 2
+#define CONTINUE 1
+#define EXIT 0
+#define OUTOFRANGE -1
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -93,7 +99,8 @@ void print_field(FIELD map){
         }
         printf(" ");
       }else if(x % 5 == 0) printf("|");
-      // bombは上下左右に一列ずつ大きくしているため、
+      // bombは、上下左右に一列ずつ
+      // 大きくしているため、
       // この様な表示の仕方をする。
       if(map.state[y + BIAS][x + BIAS] == s_false){
         if(map.bomb[y + BIAS][x + BIAS] == true) printf("M");
@@ -142,8 +149,6 @@ void print_all_field(FIELD map){
         }
         printf(" ");
       }else if(x % 5 == 0) printf("|");
-      // bombは上下左右に一列ずつ大きくしているため、
-      // この様な表示の仕方をする。
       if(map.state[y + BIAS][x + BIAS] == s_flag){
         if(map.bomb[y + BIAS][x + BIAS] == true) printf("!");
         else printf("&");
@@ -166,16 +171,17 @@ void print_all_field(FIELD map){
   printf("\n");
 }
 
-// mallocを使い、フィールドを生成する。
+// mallocを使い、フィールドを生成
 // 動的に取得するため、メモリの負担を抑えられる。
 void make_field(FIELD *map){
-  int i,j,flag;
+  int i,j;
+  BOOLEAN flag;
   do{
     do{
-      flag = 0;
+      flag = false;
       printf("x,y,m > ");
-      if(scanf("%d,%d,%d",&(map -> size.x),&(map -> size.y),&(map -> size.bombs)) != 3){
-        flag = 1;
+      if(scanf("%d,%d,%d",&(map -> size.x),&(map -> size.y),&(map -> size.bombs)) != NUM_SCANF_MAP){
+        flag = true;
         puts("Enter the correct value.");
       }
       while(getchar() != '\n');
@@ -195,7 +201,7 @@ void make_field(FIELD *map){
   for(  i = 0;i < (map -> size.y) + (BIAS*2);i++){
     for(j = 0;j < (map -> size.x) + (BIAS*2);j++){
       map -> state[i][j] = s_true;
-      map -> qty[i][j]   = -1;
+      map -> qty[i][j]   = OUTOFRANGE;
     }
   }
 }
@@ -237,12 +243,12 @@ int clear_check(FIELD map){
   for(y = 0;y < map.size.y;y++){
     for(x = 0;x < map.size.x;x++){
       if(map.state[y + BIAS][x + BIAS] != s_false){
-        if(map.bomb[y + BIAS][x + BIAS] == false) return 0;
+        if(map.bomb[y + BIAS][x + BIAS] == false) return CONTINUE;
       }
     }
   }
   printf("\n\n\n GAME CLEAR!! \n");
-  return 1;
+  return EXIT;
 }
 
 // ゲームを続けるか聞くだけ。
@@ -255,11 +261,12 @@ int game_continue(void){
     scanf("%c",&c);
     while(getchar() != '\n');
   }while(c != 'n' && c != 'y');
-  if(c == 'n') return 0;
-  else return 1;
+  if(c == 'n') return EXIT;
+  else return CONTINUE;
 }
 
-// もう一度mallocできるように開放するための関数
+// もう一度mallocできるように、
+// 開放するための関数
 void free_map_data(FIELD *map){
   int i;
   for(i = 0;i < map -> size.y + BIAS*2;i++){
@@ -269,7 +276,8 @@ void free_map_data(FIELD *map){
   }
 
   free(map -> qty);
-  // enum型はfreeの仕様が若干違うらしい...ややこしい...
+  // enum型はfreeの仕様が
+  // 若干違うらしい...ややこしい...
 }
 
 // 周囲にあるボムの数をカウントし、格納する。
@@ -283,7 +291,8 @@ void calc_bomb(int **qty,BOOLEAN **bomb,int x,int y){
   }
 }
 
-// calc_bombをフィールドサイズ分カウントするだけ。
+// calc_bombをフィールドサイズ分
+// カウントするだけ。
 void loop_calc_bomb(FIELD *map){
   int x,y;
   for(x = 0;x < map -> size.x;x++){
@@ -295,15 +304,15 @@ void loop_calc_bomb(FIELD *map){
 
 int data_input(FIELD *map,int *x,int *y){
   static BOOLEAN mode = true;
-  int flag = 0;
+  BOOLEAN flag;
   do{
-    flag = 0;
+    flag = true;
     if(mode == true) printf ("openmode ");
     else printf("flagmode ");
     printf("x,y > ");
-    if(scanf("%d,%d",x,y) != 2) flag = 1;
-    while(getchar() != '\n') flag = 2;
-  }while(flag != 0);
+    if(scanf("%d,%d",x,y) != NUM_SCANF_STATE) flag = false;
+    while(getchar() != '\n') flag = false;
+  }while(flag != true);
 
   if((0 > *x || *x >= map -> size.x ) || (0 > *y || *y >= map -> size.y)){
     if(mode == true) mode = false;
@@ -312,7 +321,7 @@ int data_input(FIELD *map,int *x,int *y){
     if(mode == true){
       // 爆弾の判定をして、無かったら一気に開ける関数に飛ぶ
       if(map -> state[(*y) + BIAS][(*x) + BIAS] != s_flag){
-        if(map -> bomb[(*y) + BIAS][(*x) + BIAS] == true) return 0;
+        if(map -> bomb[(*y) + BIAS][(*x) + BIAS] == true) return EXIT;
         else determinate_field(map,(*x)+1,(*y)+1);
       };
     }else{
@@ -322,15 +331,14 @@ int data_input(FIELD *map,int *x,int *y){
         map -> state[(*y) + BIAS][(*x) + BIAS] = s_flag;
     }
   }
-  return 1;
+  return CONTINUE;
 }
 
 void determinate_field(FIELD *map,int x,int y){
   int i,j;
   if(map -> state[y][x] != s_true) return;
   map -> state[y][x] = s_false;
-  if((0 <= x && x <= map -> size.x + 1 ) && \
-     (0 <= y && y <= map -> size.y + 1)){
+  if((0 <= x && x <= map -> size.x + BIAS ) && (0 <= y && y <= map -> size.y + BIAS)){
     if(map -> qty[y][x] == 0){
       for(j = -1;j < 3 - 1;j++){
         for(i = -1;i < 3 - 1;i++){

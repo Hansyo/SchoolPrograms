@@ -9,7 +9,7 @@ void game(void);
 int main(void){
   srand((unsigned)time(NULL));
   do game();
-  while(game_continue() != 0);
+  while(game_continue() != EXIT);
   return 0;
 }
 
@@ -22,10 +22,10 @@ void game(void){
   loop_calc_bomb(map);
   puts("if you want change(toggle) openmode or flagmode, you should type \"-1,-1\"");
   do{
-    if(clear_check(*map)) break;
+    if(clear_check(*map) == EXIT) break;
     print_field(*map);
     print_precedents();
-  }while(data_input(map,&x,&y));
+  }while(data_input(map,&x,&y) == CONTINUE);
   print_all_field(*map);
   if(map -> bomb[y + BIAS][x + BIAS] == true){
     printf("\n\n\n GAME OVER. \n\n\n");
